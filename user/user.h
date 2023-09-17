@@ -1,6 +1,9 @@
 struct stat;
+#include "kernel/types.h"
 
 // system calls
+void dump(void);
+int dump2(int pid, int reg_num, uint64* return_value);
 int fork(void);
 int exit(int) __attribute__((noreturn));
 int wait(int*);

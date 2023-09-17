@@ -681,3 +681,45 @@ procdump(void)
     printf("\n");
   }
 }
+
+void 
+dump()
+{
+  struct proc *p = myproc();
+  uint64* sp = &p->trapframe->s2;
+  int reg_num = 2;
+
+  while (reg_num <= 11){
+    printf("s%d = %d\n", reg_num, *sp);
+    reg_num++;
+    sp++;
+  }
+}
+
+int 
+dump2(int pid, int reg_num, uint64 return_value)
+{
+
+  if (reg_num < 2 || reg_num > 11) return -3;
+
+  struct proc *p = myproc();
+
+  for (int i = 0; i < NPROC; ++i){
+    if (proc[i].pid == pid){ p = &proc[i]; break;}
+    else if (i == NPROC - 1) return -2;
+  }
+
+  struct proc *parent = myproc();
+
+  if (!(p->parent->pid == parent->pid || p->pid == parent->pid)) return -1;
+
+  uint64* sp = &p->trapframe->s2;
+ 
+  sp += reg_num - 2;  
+
+  if (copyout(parent->pagetable, return_value, (void*) sp, sizeof(uint64)) < 0)
+    return -4;
+
+  return 0;
+
+}
