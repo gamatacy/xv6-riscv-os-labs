@@ -46,6 +46,7 @@ main(){
         close(c[1]);
 
     }
+    
 
     exit(0);
 
