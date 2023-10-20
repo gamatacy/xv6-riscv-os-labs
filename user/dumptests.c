@@ -106,12 +106,9 @@ int main(void) {
   goto no_dump;
 #endif
 #ifdef SYS_dump
-  printf("dump syscall found. Start testing\n");
-  test1();
-  test2();
-  test3();
-  test4();
-  printf("4 tests were ran\n");
+  printf("TEST FILES ALLOCATION\n");
+  dump();
+  printf("END OF TEST\n");
 #endif
 #ifndef SYS_dump
 no_dump:
