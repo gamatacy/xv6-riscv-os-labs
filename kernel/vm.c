@@ -15,6 +15,28 @@ extern char etext[];  // kernel.ld sets this to end of kernel code.
 
 extern char trampoline[]; // trampoline.S
 
+void _vmprint(pagetable_t tbl, int level) {
+    // there are 2^9 = 512 PTEs in a page table.
+    for (int i = 0; i < 512; i++) {
+        pte_t pte = tbl[i];
+        if (pte & PTE_V) {
+            for (int i = 0; i < level; i++) printf(".. ");
+            printf("%d: pte %p pa %p\n", i, pte, PTE2PA(pte));
+            if ((pte & (PTE_R | PTE_W | PTE_X)) == 0) {
+                // this PTE points to a lower-level page table.
+                uint64 child = PTE2PA(pte);
+                _vmprint((pagetable_t) child, level + 1);
+            }
+
+        }
+    }
+}
+
+void vmprint(pagetable_t tbl) {
+    printf("page table: %p\n", tbl);
+    _vmprint(tbl, 1);
+}
+
 // Make a direct-map page table for the kernel.
 pagetable_t
 kvmmake(void) {
@@ -181,6 +203,7 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free) {
         }
         *pte = 0;
     }
+
 }
 
 // create an empty user page table.
@@ -293,7 +316,6 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz) {
     pte_t *pte;
     uint64 pa, i;
     uint flags;
-    char *mem;
 
     for (i = 0; i < sz; i += PGSIZE) {
         if ((pte = walk(old, i, 0)) == 0)
@@ -302,13 +324,37 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz) {
             panic("uvmcopy: page not present");
         pa = PTE2PA(*pte);
         flags = PTE_FLAGS(*pte);
-        if ((mem = kalloc()) == 0)
-            goto err;
-        memmove(mem, (char *) pa, PGSIZE);
-        if (mappages(new, i, PGSIZE, (uint64) mem, flags) != 0) {
-            kfree(mem);
-            goto err;
+        if (flags & PTE_W) {
+            flags &= ~PTE_W;
+            *pte &= ~PTE_W;
         }
+        if (mappages(new, i, PGSIZE, pa, flags) != 0) goto err;
+    }
+    return 0;
+
+    err:
+    uvmunmap(new, 0, i / PGSIZE, 1);
+    return -1;
+}
+
+int
+uvmcow(pagetable_t old, pagetable_t new, uint64 sz) {
+    pte_t *pte;
+    uint64 pa, i;
+    uint flags;
+
+    for (i = 0; i < sz; i += PGSIZE) {
+        if ((pte = walk(old, i, 0)) == 0)
+            panic("uvmcopy: pte should exist");
+        if ((*pte & PTE_V) == 0)
+            panic("uvmcopy: page not present");
+        pa = PTE2PA(*pte);
+        flags = PTE_FLAGS(*pte);
+        if (flags & PTE_W) {
+            flags &= ~PTE_W;
+            *pte &= ~PTE_W;
+        }
+        if (mappages(new, i, PGSIZE, pa, flags) != 0) goto err;
     }
     return 0;
 

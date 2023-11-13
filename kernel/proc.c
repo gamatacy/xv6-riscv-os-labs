@@ -284,11 +284,15 @@ fork(void) {
     acquire(&list_lock);
 
     // Copy user memory from parent to child.
+
     if (uvmcopy(p->pagetable, np->pagetable, p->sz) < 0) {
         freeproc(np);
         release(&list_lock);
         return -1;
     }
+
+    vmprint(np->pagetable);
+
     np->sz = p->sz;
 
     // copy saved user registers.
