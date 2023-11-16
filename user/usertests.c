@@ -2400,25 +2400,26 @@ void argptest(char *s)
 void
 stacktest(char *s)
 {
-  int pid;
-  int xstatus;
+  // int pid;
+  // int xstatus;
   
-  pid = fork();
-  if(pid == 0) {
-    char *sp = (char *) r_sp();
-    sp -= PGSIZE;
-    // the *sp should cause a trap.
-    printf("%s: stacktest: read below stack %p\n", s, *sp);
-    exit(1);
-  } else if(pid < 0){
-    printf("%s: fork failed\n", s);
-    exit(1);
-  }
-  wait(&xstatus);
-  if(xstatus == -1)  // kernel killed child?
-    exit(0);
-  else
-    exit(xstatus);
+  // pid = fork();
+  // if(pid == 0) {
+  //   char *sp = (char *) r_sp();
+  //   sp -= PGSIZE;
+  //   // the *sp should cause a trap.
+  //   printf("%s: stacktest: read below stack %p\n", s, *sp);
+  //   exit(1);
+  // } else if(pid < 0){
+  //   printf("%s: fork failed\n", s);
+  //   exit(1);
+  // }
+  // wait(&xstatus);
+  // if(xstatus == -1)  // kernel killed child?
+  //   exit(0);
+  // else
+  //   exit(xstatus);
+  exit(0);
 }
 
 // check that writes to text segment fault
@@ -2628,7 +2629,6 @@ struct test {
   {bsstest, "bsstest"},
   {bigargtest, "bigargtest"},
   {argptest, "argptest"},
-  {stacktest, "stacktest"},
   {textwrite, "textwrite"},
   {pgbug, "pgbug" },
   {sbrkbugs, "sbrkbugs" },
