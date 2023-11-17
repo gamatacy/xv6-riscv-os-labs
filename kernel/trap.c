@@ -68,13 +68,11 @@ usertrap(void)
   }else if (r_scause() == 13 || r_scause() == 15) {
     // 13: Page load fault, 15: Page store fault
     if (r_stval() >= p->sz) {
-      p->killed = 1;
       goto end;
     }
 
     if (r_stval() < p->ustack) {
       printf("Access guard page is invalid\n");
-      p->killed = 1;
       goto end;
     }
 
@@ -83,14 +81,12 @@ usertrap(void)
 
     char *pa = kalloc();
     if(pa == 0) {
-      p->killed = 1;
       goto end;
     }
     memset(pa, 0, PGSIZE);
     // install page to page table
     if (mappages(p->pagetable, vm, PGSIZE, (uint64)pa, PTE_W|PTE_R|PTE_X|PTE_U) != 0) {
       kfree(pa);
-      p->killed = 1;
     }
   }
 
